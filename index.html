@@ -5,8 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>StudentWallet - Expense Tracker</title>
 <style>
+
 :root{--bg:#f3f5fb;--card:#fff;--text:#192238;--muted:#788198;--primary:#6857e8;--border:#e5e8f1;--green:#159b72;--red:#df4963}
 *{box-sizing:border-box}
+.dashboard-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.dashboard-logo img {
+    width: 45px;
+    height: 45px;
+    object-fit: contain;
+}
 body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text)}
 body.dark{--bg:#101522;--card:#1a2232;--text:#f2f4fc;--muted:#a0abc0;--border:#30394c}
 button,input,select{font:inherit}
@@ -57,7 +72,11 @@ th{color:var(--muted)}
 <!-- LOGIN / SIGN UP -->
 <section id="auth" class="auth-wrap">
   <div class="auth-card">
-    <div class="logo">◈ StudentWallet</div>
+    <div class="logo">
+    <img src="logo.png" alt="StudentWallet Logo"
+         style="width:180px; max-width:100%; height:auto;
+         display: block; margin:  0 auto;">
+</div>
     <h1 style="font-size:24px;margin-top:22px">Your money, your control.</h1>
     <p class="muted">Track your student expenses and build better money habits.</p>
     <div class="tabs">
@@ -107,7 +126,13 @@ th{color:var(--muted)}
   </nav>
 
   <section class="page active" id="dashboard">
-    <h1>Dashboard</h1><p class="muted">Your financial overview at a glance.</p>
+    <div class="dashboard-logo">
+        <img src="./logo.png" alt="StudentWallet Logo">
+        <span>StudentWallet</span>
+    </div>
+
+    <h1>Dashboard</h1>
+    <p class="muted">Your financial overview at a glance.</p>
     <div class="grid">
       <div class="card"><div class="stat-label">Current Balance</div><div class="stat" id="balance">₹0</div></div>
       <div class="card"><div class="stat-label">This Month's Income</div><div class="stat green" id="income">₹0</div></div>

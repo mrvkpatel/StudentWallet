@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StudentWallet - Expense Tracker</title>
+<style>
+:root{--bg:#f3f5fb;--card:#fff;--text:#192238;--muted:#788198;--primary:#6857e8;--border:#e5e8f1;--green:#159b72;--red:#df4963}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text)}
+body.dark{--bg:#101522;--card:#1a2232;--text:#f2f4fc;--muted:#a0abc0;--border:#30394c}
+button,input,select{font:inherit}
+button{cursor:pointer}
+input,select{width:100%;padding:12px;border:1px solid var(--border);border-radius:9px;background:var(--bg);color:var(--text)}
+button:focus,input:focus,select:focus{outline:2px solid #9388ff}
+.btn{padding:11px 14px;border:1px solid var(--border);border-radius:9px;background:var(--card);color:var(--text);font-weight:bold}
+.primary{background:var(--primary);color:white;border-color:var(--primary)}
+.danger{color:var(--red)}
+.auth-wrap{min-height:100vh;display:grid;place-items:center;padding:20px}
+.auth-card{width:100%;max-width:420px;background:var(--card);padding:30px;border:1px solid var(--border);border-radius:20px;box-shadow:0 15px 50px #20284a12}
+.logo{font-size:25px;font-weight:800;color:var(--primary);margin-bottom:8px}
+.muted{color:var(--muted);font-size:14px;line-height:1.5}
+.tabs{display:flex;gap:8px;margin:22px 0}
+.tabs button{flex:1}
+.field{margin:14px 0}
+label{display:block;font-size:13px;font-weight:bold;margin-bottom:7px}
+.error{color:var(--red);font-size:13px;min-height:18px}
+#app{display:none}
+header{background:var(--card);border-bottom:1px solid var(--border);padding:16px 5%;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+header .logo{margin:0}
+main{max-width:1100px;margin:auto;padding:25px 18px}
+.nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
+.nav button.active{background:var(--primary);color:white}
+.page{display:none}.page.active{display:block}
+h1{font-size:26px;margin:0 0 7px}h2{font-size:18px;margin:0 0 17px}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:18px 0}
+.card{background:var(--card);padding:20px;border:1px solid var(--border);border-radius:14px;margin-bottom:17px;min-width:0}
+.stat-label{font-size:13px;color:var(--muted);margin-bottom:12px}
+.stat{font-size:24px;font-weight:800;overflow-wrap:anywhere}
+.green{color:var(--green)}.red{color:var(--red)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+form .primary{width:100%}
+table{border-collapse:collapse;width:100%;min-width:520px}
+th,td{text-align:left;border-bottom:1px solid var(--border);padding:12px 8px;font-size:13px}
+th{color:var(--muted)}
+.table-wrap{overflow-x:auto}
+.progress{height:9px;border-radius:9px;background:var(--border);overflow:hidden;margin:14px 0}
+.progress div{height:100%;background:var(--primary);width:0}
+.category{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px}
+.notice{font-size:12px;color:var(--muted);line-height:1.6;margin-top:15px}
+#toast{position:fixed;bottom:20px;right:20px;background:var(--text);color:var(--card);padding:13px 18px;border-radius:9px;display:none}
+@media(max-width:750px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.row{grid-template-columns:1fr}header{padding:15px}.stat{font-size:20px}main{padding:18px 12px}.card{padding:15px}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN / SIGN UP -->
+<section id="auth" class="auth-wrap">
+  <div class="auth-card">
+    <div class="logo">◈ StudentWallet</div>
+    <h1 style="font-size:24px;margin-top:22px">Your money, your control.</h1>
+    <p class="muted">Track your student expenses and build better money habits.</p>
+    <div class="tabs">
+      <button class="btn primary" id="loginTab" type="button">Login</button>
+      <button class="btn" id="signupTab" type="button">Sign Up</button>
+    </div>
+    <form id="authForm">
+      <div class="field" id="nameField" style="display:none">
+        <label for="authName">Full name</label>
+        <input id="authName" maxlength="60" autocomplete="name" placeholder="Your name">
+      </div>
+      <div class="field">
+        <label for="authEmail">Email</label>
+        <input id="authEmail" type="email" required maxlength="120" autocomplete="email" placeholder="student@example.com">
+      </div>
+      <div class="field">
+        <label for="authPassword">Password</label>
+        <input id="authPassword" type="password" required minlength="6" maxlength="100" autocomplete="current-password" placeholder="At least 6 characters">
+      </div>
+      <p class="error" id="authError" role="alert"></p>
+      <button class="btn primary" id="authSubmit" type="submit">Login</button>
+    </form>
+    <p class="notice">College demo only: accounts and data are saved in this browser. This is not secure real-world authentication.</p>
+  </div>
+</section>
+
+<!-- MAIN APP -->
+<div id="app">
+<header>
+  <div>
+    <div class="logo">◈ StudentWallet</div>
+    <div class="muted">Welcome, <strong id="studentName"></strong></div>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn" id="themeBtn" type="button">☾ Theme</button>
+    <button class="btn danger" id="logoutBtn" type="button">Logout ↗</button>
+  </div>
+</header>
+
+<main>
+  <nav class="nav">
+    <button class="btn active" data-page="dashboard">Dashboard</button>
+    <button class="btn" data-page="transactions">Transactions</button>
+    <button class="btn" data-page="add">+ Add Transaction</button>
+    <button class="btn" data-page="budget">Budget</button>
+    <button class="btn" data-page="reports">Reports</button>
+  </nav>
+
+  <section class="page active" id="dashboard">
+    <h1>Dashboard</h1><p class="muted">Your financial overview at a glance.</p>
+    <div class="grid">
+      <div class="card"><div class="stat-label">Current Balance</div><div class="stat" id="balance">₹0</div></div>
+      <div class="card"><div class="stat-label">This Month's Income</div><div class="stat green" id="income">₹0</div></div>
+      <div class="card"><div class="stat-label">This Month's Expenses</div><div class="stat red" id="expense">₹0</div></div>
+      <div class="card"><div class="stat-label">Monthly Savings</div><div class="stat" id="savings">₹0</div></div>
+    </div>
+    <div class="row">
+      <div class="card">
+        <h2>Recent Transactions</h2>
+        <div class="table-wrap"><table><thead><tr><th>Description</th><th>Date</th><th>Amount</th></tr></thead><tbody id="recentRows"></tbody></table></div>
+      </div>
+      <div class="card">
+        <h2>Monthly Budget</h2>
+        <div class="stat-label">Your spending limit</div><div class="stat" id="dashBudget">₹0</div>
+        <div class="progress"><div id="dashProgress"></div></div>
+        <p class="muted" id="dashBudgetText">Set a budget to get started.</p>
+      </div>
+    </div>
+    <div class="card"><h2>Expenses by Category</h2><div id="dashCategories"></div></div>
+  </section>
+
+  <section class="page" id="transactions">
+    <h1>Transactions</h1><p class="muted">Search and manage your money records.</p>
+    <div class="card">
+      <div class="field"><label for="search">Search</label><input id="search" placeholder="Search description or category"></div>
+      <div class="field"><label for="filterType">Transaction type</label><select id="filterType"><option value="all">All transactions</option><option value="income">Income</option><option value="expense">Expense</option></select></div>
+      <div class="table-wrap"><table><thead><tr><th>Description</th><th>Category</th><th>Date</th><th>Type</th><th>Amount</th><th>Action</th></tr></thead><tbody id="allRows"></tbody></table></div>
+    </div>
+  </section>
+
+  <section class="page" id="add">
+    <h1 id="formHeading">Add Transaction</h1><p class="muted">Record money coming in or going out.</p>
+    <div class="card">
+      <form id="txForm">
+        <input type="hidden" id="editId">
+        <div class="field"><label for="txType">Type</label><select id="txType"><option value="expense">Expense</option><option value="income">Income</option></select></div>
+        <div class="field"><label for="txAmount">Amount (₹)</label><input id="txAmount" type="number" min="0.01" step="0.01" required placeholder="250"></div>
+        <div class="field"><label for="txCategory">Category</label><select id="txCategory"></select></div>
+        <div class="field"><label for="txDescription">Description</label><input id="txDescription" maxlength="100" required placeholder="e.g. Lunch, books, pocket money"></div>
+        <div class="field"><label for="txDate">Date</label><input id="txDate" type="date" required></div>
+        <button class="btn primary" id="saveTx" type="submit">Save Transaction</button>
+        <button class="btn" id="cancelEdit" type="button" style="width:100%;margin-top:8px">Cancel</button>
+      </form>
+    </div>
+  </section>
+
+  <section class="page" id="budget">
+    <h1>Budget Planner</h1><p class="muted">Set your monthly spending limit.</p>
+    <div class="card">
+      <form id="budgetForm">
+        <div class="field"><label for="budgetInput">Monthly budget (₹)</label><input id="budgetInput" type="number" min="0" step="0.01" required placeholder="5000"></div>
+        <button class="btn primary" type="submit">Save Budget</button>
+      </form>
+    </div>
+    <div class="card"><h2>Budget Status</h2><div class="stat-label">Spent this month</div><div class="stat red" id="budgetSpent">₹0</div><div class="progress"><div id="budgetProgress"></div></div><p class="muted" id="budgetStatus"></p></div>
+  </section>
+
+  <section class="page" id="reports">
+    <h1>Reports</h1><p class="muted">See your income and expenses for this month.</p>
+    <div class="grid">
+      <div class="card"><div class="stat-label">Income</div><div class="stat green" id="reportIncome">₹0</div></div>
+      <div class="card"><div class="stat-label">Expenses</div><div class="stat red" id="reportExpense">₹0</div></div>
+      <div class="card"><div class="stat-label">Net Savings</div><div class="stat" id="reportSavings">₹0</div></div>
+      <div class="card"><div class="stat-label">Transactions</div><div class="stat" id="reportCount">0</div></div>
+    </div>
+    <div class="card"><h2>Category Breakdown</h2><div id="reportCategories"></div></div>
+    <div class="card"><h2>Export Your Data</h2><p class="muted">Download your transactions as a CSV spreadsheet.</p><button class="btn primary" id="csvBtn" type="button">Download CSV</button></div>
+  </section>
+
+  <footer class="notice" style="text-align:center;padding:20px">StudentWallet · Student Expense Tracker Project</footer>
+</main>
+</div>
+<div id="toast" role="status"></div>
+
+<script>
+"use strict";
+
+const $ = id => document.getElementById(id);
+const USERS_KEY = "sw_demo_users_v1";
+const SESSION_KEY = "sw_demo_session_v1";
+const categories = {
+  expense:["Food","Transport","Education","Shopping","Bills","Health","Entertainment","Hostel/Rent","Other"],
+  income:["Salary","Pocket Money","Scholarship","Freelance","Gift","Other"]
+};
+const icons = {"Food":"🍔","Transport":"🚌","Education":"📚","Shopping":"🛍️","Bills":"🧾","Health":"💊","Entertainment":"🎬","Hostel/Rent":"🏠","Salary":"💼","Pocket Money":"💵","Scholarship":"🎓","Freelance":"💻","Gift":"🎁","Other":"📌"};
+const money = n => new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:2}).format(Number(n)||0);
+const today = () => {
+  const d=new Date(),offset=d.getTimezoneOffset();
+  return new Date(d.getTime()-offset*60000).toISOString().slice(0,10);
+};
+const monthNow = () => today().slice(0,7);
+const newId = () => Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+let mode = "login";
+let user = null;
+let data = null;
+let toastTimer;
+
+function readUsers(){
+  try {
+    const u=JSON.parse(localStorage.getItem(USERS_KEY)||"{}");
+    return u && typeof u==="object" && !Array.isArray(u) ? u : {};
+  } catch { return {}; }
+}
+function userKey(email){return "sw_demo_data_"+email;}
+function freshData(){return {transactions:[],budget:0,theme:"light"};}
+function readData(email){
+  try{
+    const d=JSON.parse(localStorage.getItem(userKey(email))||"null");
+    if(!d || !Array.isArray(d.transactions))return freshData();
+    d.budget=Math.max(0,Number(d.budget)||0);
+    d.theme=d.theme==="dark"?"dark":"light";
+    d.transactions=d.transactions.filter(t=>t&&["income","expense"].includes(t.type)&&Number(t.amount)>0&&Number.isFinite(Number(t.amount))&&typeof t.date==="string").map(t=>({...t,amount:Number(t.amount)}));
+    return d;
+  }catch{return freshData();}
+}
+function saveData(){
+  try{localStorage.setItem(userKey(user.email),JSON.stringify(data));return true;}
+  catch{toast("Could not save data. Browser storage may be full.");return false;}
+}
+function toast(message){
+  $("toast").textContent=message;$("toast").style.display="block";
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>$("toast").style.display="none",2600);
+}
+function setMode(next){
+  mode=next;
+  $("nameField").style.display=mode==="signup"?"block":"none";
+  $("authName").required=mode==="signup";
+  $("authPassword").autocomplete=mode==="signup"?"new-password":"current-password";
+  $("authError").textContent="";
+  $("authSubmit").textContent=mode==="signup"?"Create Account":"Login";
+  $("loginTab").classList.toggle("primary",mode==="login");
+  $("signupTab").classList.toggle("primary",mode==="signup");
+}
+$("loginTab").onclick=()=>setMode("login");
+$("signupTab").onclick=()=>setMode("signup");
+
+async function passwordHash(password){
+  // Hashing is available in modern browsers on localhost/HTTPS.
+  if(window.crypto && crypto.subtle && window.isSecureContext){
+    const bytes=new TextEncoder().encode(password);
+    const hash=await crypto.subtle.digest("SHA-256",bytes);
+    return "sha256:"+Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,"0")).join("");
+  }
+  // Fallback is only for this classroom demo, not real authentication.
+  return "demo:"+password;
+}
+$("authForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const email=$("authEmail").value.trim().toLowerCase();
+  const password=$("authPassword").value;
+  const name=$("authName").value.trim();
+  const users=readUsers();
+  $("authError").textContent="";
+  if(!email||!password)return;
+  const submit=$("authSubmit");submit.disabled=true;
+  try{
+    const hash=await passwordHash(password);
+    if(mode==="signup"){
+      if(!name){$("authError").textContent="Please enter your name.";return;}
+      if(users[email]){$("authError").textContent="This email already has a demo account. Please login.";return;}
+      users[email]={name:name.slice(0,60),passwordHash:hash};
+      localStorage.setItem(USERS_KEY,JSON.stringify(users));
+      loginUser(email);
+      toast("Account created successfully!");
+    }else{
+      if(!users[email] || users[email].passwordHash!==hash){
+        $("authError").textContent="Incorrect email or password. If new, choose Sign Up.";
+        return;
+      }
+      loginUser(email);
+      toast("Welcome back!");
+    }
+  }catch(err){
+    $("authError").textContent="Browser storage is unavailable. Try Live Server.";
+  }finally{submit.disabled=false;}
+});
+function loginUser(email){
+  const users=readUsers();
+  user={email,name:users[email].name};
+  data=readData(email);
+  localStorage.setItem(SESSION_KEY,email);
+  $("auth").style.display="none";$("app").style.display="block";
+  $("studentName").textContent=user.name;
+  document.body.classList.toggle("dark",data.theme==="dark");
+  $("themeBtn").textContent=data.theme==="dark"?"☀ Light mode":"☾ Dark mode";
+  resetForm();renderAll();goTo("dashboard");
+}
+function logout(){
+  localStorage.removeItem(SESSION_KEY);
+  user=null;data=null;
+  $("app").style.display="none";$("auth").style.display="grid";
+  $("authForm").reset();setMode("login");
+  $("authPassword").value="";
+}
+$("logoutBtn").onclick=logout;
+
+function setCategories(selected){
+  const type=$("txType").value;
+  $("txCategory").innerHTML=categories[type].map(c=>`<option value="${c}">${icons[c]||"📌"} ${c}</option>`).join("");
+  if(selected&&categories[type].includes(selected))$("txCategory").value=selected;
+}
+$("txType").addEventListener("change",()=>setCategories());
+function monthItems(){return data.transactions.filter(t=>t.date.slice(0,7)===monthNow());}
+function total(items,type){return items.filter(t=>!type||t.type===type).reduce((s,t)=>s+t.amount,0);}
+function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function row(t,compact=false){
+  const sign=t.type==="income"?"+":"−";
+  if(compact)return `<tr><td>${icons[t.category]||"📌"} ${escapeHTML(t.description)}<br><small>${escapeHTML(t.category)}</small></td><td>${escapeHTML(t.date)}</td><td class="${t.type==="income"?"green":"red"}">${sign}${money(t.amount)}</td></tr>`;
+  return `<tr><td>${escapeHTML(t.description)}</td><td>${escapeHTML(t.category)}</td><td>${escapeHTML(t.date)}</td><td>${t.type}</td><td class="${t.type==="income"?"green":"red"}">${sign}${money(t.amount)}</td><td><button class="btn" data-edit="${escapeHTML(t.id)}">Edit</button> <button class="btn danger" data-delete="${escapeHTML(t.id)}">Delete</button></td></tr>`;
+}
+function emptyRow(n){return `<tr><td colspan="${n}" style="text-align:center;padding:25px;color:var(--muted)">No transactions found yet.</td></tr>`;}
+function categoriesHTML(items){
+  const expenses=items.filter(t=>t.type==="expense"),grand=total(expenses);
+  const sums={};expenses.forEach(t=>sums[t.category]=(sums[t.category]||0)+t.amount);
+  const entries=Object.entries(sums).sort((a,b)=>b[1]-a[1]);
+  if(!entries.length)return '<p class="muted">No expenses recorded this month.</p>';
+  return entries.map(([cat,amount])=>`<div class="category"><span>${icons[cat]||"📌"} ${escapeHTML(cat)}</span><strong>${money(amount)}</strong></div><div class="progress"><div style="width:${grand?amount/grand*100:0}%"></div></div>`).join("");
+}
+function renderDashboard(){
+  const items=monthItems(),inc=total(items,"income"),exp=total(items,"expense");
+  $("balance").textContent=money(total(data.transactions,"income")-total(data.transactions,"expense"));
+  $("income").textContent=money(inc);$("expense").textContent=money(exp);$("savings").textContent=money(inc-exp);
+  const b=data.budget;
+  $("dashBudget").textContent=money(b);
+  $("dashProgress").style.width=b?Math.min(100,exp/b*100)+"%":"0%";
+  $("dashBudgetText").textContent=!b?"Set your budget in the Budget tab.":money(b-exp)+" remaining · "+Math.round(exp/b*100)+"% used";
+  const recent=[...data.transactions].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
+  $("recentRows").innerHTML=recent.length?recent.map(t=>row(t,true)).join(""):emptyRow(3);
+  $("dashCategories").innerHTML=categoriesHTML(items);
+}
+function renderTransactions(){
+  const q=$("search").value.trim().toLowerCase(),type=$("filterType").value;
+  const list=[...data.transactions].filter(t=>(type==="all"||t.type===type)&&(t.description+" "+t.category).toLowerCase().includes(q)).sort((a,b)=>b.date.localeCompare(a.date));
+  $("allRows").innerHTML=list.length?list.map(t=>row(t)).join(""):emptyRow(6);
+}
+function renderBudget(){
+  const spent=total(monthItems(),"expense"),b=data.budget;
+  $("budgetInput").value=b||"";
+  $("budgetSpent").textContent=money(spent);
+  $("budgetProgress").style.width=b?Math.min(100,spent/b*100)+"%":"0%";
+  $("budgetStatus").textContent=!b?"Please set a budget.":spent>b?"You are over budget by "+money(spent-b)+".":"You have "+money(b-spent)+" remaining.";
+}
+function renderReports(){
+  const items=monthItems(),inc=total(items,"income"),exp=total(items,"expense");
+  $("reportIncome").textContent=money(inc);$("reportExpense").textContent=money(exp);
+  $("reportSavings").textContent=money(inc-exp);$("reportCount").textContent=items.length;
+  $("reportCategories").innerHTML=categoriesHTML(items);
+}
+function renderAll(){renderDashboard();renderTransactions();renderBudget();renderReports();}
+const titles={dashboard:"Dashboard",transactions:"Transactions",add:"Add Transaction",budget:"Budget Planner",reports:"Reports"};
+function goTo(id){
+  document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id===id));
+  document.querySelectorAll("[data-page]").forEach(b=>b.classList.toggle("active",b.dataset.page===id));
+  document.querySelector("main > section.active")?.scrollIntoView({block:"start",behavior:"smooth"});
+}
+document.querySelectorAll("[data-page]").forEach(b=>b.addEventListener("click",()=>goTo(b.dataset.page)));
+$("themeBtn").onclick=()=>{
+  data.theme=data.theme==="dark"?"light":"dark";
+  document.body.classList.toggle("dark",data.theme==="dark");
+  $("themeBtn").textContent=data.theme==="dark"?"☀ Light mode":"☾ Theme";
+  saveData();
+};
+function resetForm(){
+  $("txForm").reset();$("editId").value="";$("txDate").value=today();
+  $("txType").value="expense";setCategories();
+  $("formHeading").textContent="Add Transaction";$("saveTx").textContent="Save Transaction";
+}
+$("txForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  const amount=Number($("txAmount").value),description=$("txDescription").value.trim(),id=$("editId").value;
+  if(!Number.isFinite(amount)||amount<=0||!description){toast("Enter a valid amount and description.");return;}
+  const t={id:id||newId(),type:$("txType").value,amount,category:$("txCategory").value,description:description.slice(0,100),date:$("txDate").value};
+  if(!t.date){toast("Choose a date.");return;}
+  if(id){const i=data.transactions.findIndex(x=>x.id===id);if(i>=0)data.transactions[i]=t;}
+  else data.transactions.push(t);
+  if(!saveData())return;
+  resetForm();renderAll();goTo("dashboard");toast(id?"Transaction updated.":"Transaction saved.");
+});
+$("cancelEdit").onclick=()=>{resetForm();goTo("dashboard");};
+$("allRows").addEventListener("click",e=>{
+  const edit=e.target.closest("[data-edit]"),del=e.target.closest("[data-delete]");
+  if(edit){
+    const t=data.transactions.find(x=>x.id===edit.dataset.edit);if(!t)return;
+    $("editId").value=t.id;$("txType").value=t.type;setCategories(t.category);
+    $("txAmount").value=t.amount;$("txDescription").value=t.description;$("txDate").value=t.date;
+    $("formHeading").textContent="Edit Transaction";$("saveTx").textContent="Update Transaction";goTo("add");
+  }
+  if(del){
+    const t=data.transactions.find(x=>x.id===del.dataset.delete);if(!t)return;
+    if(confirm("Delete this transaction?")){
+      data.transactions=data.transactions.filter(x=>x.id!==t.id);saveData();renderAll();toast("Transaction deleted.");
+    }
+  }
+});
+$("search").oninput=renderTransactions;$("filterType").onchange=renderTransactions;
+$("budgetForm").addEventListener("submit",e=>{
+  e.preventDefault();const b=Number($("budgetInput").value);
+  if(!Number.isFinite(b)||b<0){toast("Enter a valid budget.");return;}
+  data.budget=b;saveData();renderAll();toast("Budget saved.");
+});
+$("csvBtn").onclick=()=>{
+  const rows=[["Date","Type","Category","Description","Amount"],...data.transactions.map(t=>[t.date,t.type,t.category,t.description,t.amount])];
+  const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")).join("\r\n");
+  const url=URL.createObjectURL(new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"}));
+  const a=document.createElement("a");a.href=url;a.download="studentwallet-transactions.csv";a.click();URL.revokeObjectURL(url);
+};
+function start(){
+  $("txDate").value=today();setCategories();
+  const email=localStorage.getItem(SESSION_KEY),users=readUsers();
+  if(email&&users[email]){
+    user={email,name:users[email].name};data=readData(email);
+    $("auth").style.display="none";$("app").style.display="block";
+    $("studentName").textContent=user.name;
+    document.body.classList.toggle("dark",data.theme==="dark");
+    $("themeBtn").textContent=data.theme==="dark"?"☀ Light mode":"☾ Theme";
+    renderAll();goTo("dashboard");
+  }else{
+    localStorage.removeItem(SESSION_KEY);
+    $("auth").style.display="grid";$("app").style.display="none";
+  }
+}
+start();
+</script>
+</body>
+</html>
